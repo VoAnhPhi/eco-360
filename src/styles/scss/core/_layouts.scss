@@ -1,0 +1,70 @@
+// ===================================================================
+// BASE GLOBAL LAYOUT
+// ===================================================================
+
+// Viewport rule (deprecated)
+@supports (-ms-ime-align: auto) {
+	@-ms-viewport {
+		width: device-width;
+	}
+}
+
+// Animation cho viền xoay
+@keyframes loading-ring-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+// Reset & smoothing
+* {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	box-sizing: border-box;
+}
+
+*::selection {
+}
+
+html {
+	font-size: 62.5%; // => 1rem = 10px
+}
+
+body {
+	width: 100%;
+	max-width: $container-max-width;
+	margin: 0 auto;
+	position: relative;
+	// font-family: "Inter", sans-serif;
+	font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+	// ---------------------------
+	// Responsive level mixin
+	// ---------------------------
+	@include xxl {
+		.container {
+			max-width: 1400px;
+		}
+	}
+	@include lg {
+		.container {
+			max-width: 1000px;
+		}
+	}
+	@include md {
+		.container {
+			max-width: 750px;
+		}
+	}
+	@include sm {
+		.container {
+			max-width: 540px;
+		}
+	}
+	@include xs {
+		.container {
+			max-width: 100%;
+		}
+	}
+}
