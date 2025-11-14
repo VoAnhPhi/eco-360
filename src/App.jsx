@@ -1,5 +1,5 @@
 // App.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LoadingScreen from "./components/LoadingScreen.jsx";
 import UserGuide from "./components/UserGuide.jsx";
 import MenuBar from "./components/MenuBar.jsx";
@@ -7,35 +7,40 @@ import Viewer360 from "./components/Viewer360.jsx";
 
 const FRAME_COUNT = 120;
 const FRAME_PATH = (index) => `/rotation/${index}.jpg`;
+// nếu sau này dùng base khác: `${import.meta.env.BASE_URL}rotation/${index}.jpg`
 
 function App() {
-	const [assetsReady, setAssetsReady] = useState(false);
+	const [frames, setFrames] = useState([]); // mảng Image()
 	const [loadingFinished, setLoadingFinished] = useState(false);
-	const [isReady, setIsReady] = useState(false);
 
+	// Preload toàn bộ frame 1 lần tránh network lòa
 	useEffect(() => {
+		const imgs = [];
 		let loaded = 0;
+
 		for (let i = 1; i <= FRAME_COUNT; i++) {
 			const img = new Image();
 			img.src = FRAME_PATH(i);
-			img.onload = img.onerror = () => {
+			img.onload = () => {
 				loaded += 1;
 				if (loaded === FRAME_COUNT) {
-					setAssetsReady(true);
+					setFrames(imgs);
 				}
 			};
+			img.onerror = () => {
+				loaded += 1;
+				if (loaded === FRAME_COUNT) {
+					setFrames(imgs);
+				}
+			};
+			imgs.push(img);
 		}
 	}, []);
 
-	// Khi CẢ HAI đều true thì mới cho vào main
-	useEffect(() => {
-		if (assetsReady && loadingFinished) {
-			setIsReady(true);
-		}
-	}, [assetsReady, loadingFinished]);
+	const assetsReady = frames.length === FRAME_COUNT;
+	const isReady = assetsReady && loadingFinished;
 
 	const handleLoadingFinish = () => {
-		// Được gọi từ LoadingScreen (sau 5s hoặc khi user bấm nút)
 		setLoadingFinished(true);
 	};
 
@@ -48,7 +53,7 @@ function App() {
 					<MenuBar />
 					<UserGuide />
 					<main className="app__main">
-						<Viewer360 />
+						<Viewer360 frames={frames} />
 					</main>
 				</>
 			)}
