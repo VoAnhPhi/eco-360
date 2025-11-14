@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 const STEP_PX = 20;
 
 function Viewer360({ frames }) {
-	const FRAME_MIN = 0; // index mảng: 0..119
+	const FRAME_MIN = 0; // index 0..length-1
 	const FRAME_MAX = frames.length - 1;
 
 	const [frameIndex, setFrameIndex] = useState(0);
@@ -20,48 +20,72 @@ function Viewer360({ frames }) {
 		accumulated: 0,
 	});
 
-	// Vẽ frame hiện tại lên canvas
+	const frameIndexRef = useRef(0);
 	useEffect(() => {
-		if (!frames.length) return;
+		frameIndexRef.current = frameIndex;
+	}, [frameIndex]);
+
+	const drawCurrentFrame = () => {
+		if (!frames || frames.length === 0) return;
+
 		const canvas = canvasRef.current;
 		const container = containerRef.current;
 		if (!canvas || !container) return;
 
-		const ctx = canvas.getContext("2d");
-		const img = frames[frameIndex];
+		const img = frames[frameIndexRef.current];
 		if (!img) return;
 
-		// Lấy kích thước container để fill 100%
 		const rect = container.getBoundingClientRect();
-		const w = rect.width || img.width;
-		const h = rect.height || img.height;
+		const cssWidth = rect.width;
+		const cssHeight = rect.height;
+		if (!cssWidth || !cssHeight) return;
 
-		// set kích thước canvas "thật"
-		canvas.width = w;
-		canvas.height = h;
+		const dpr = window.devicePixelRatio || 1;
 
-		// Vẽ cover: scale giữ tỉ lệ và fill hết vùng viewer
+		canvas.width = cssWidth * dpr;
+		canvas.height = cssHeight * dpr;
+
+		canvas.style.width = `${cssWidth}px`;
+		canvas.style.height = `${cssHeight}px`;
+
+		const ctx = canvas.getContext("2d");
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, cssWidth, cssHeight);
+
 		const imgRatio = img.width / img.height;
-		const canvasRatio = w / h;
+		const canvasRatio = cssWidth / cssHeight;
 
 		let drawWidth, drawHeight;
 		if (canvasRatio > imgRatio) {
-			// canvas rộng hơn: fill theo width
-			drawWidth = w;
-			drawHeight = w / imgRatio;
+			drawWidth = cssWidth;
+			drawHeight = cssWidth / imgRatio;
 		} else {
-			// canvas cao hơn: fill theo height
-			drawHeight = h;
-			drawWidth = h * imgRatio;
+			drawHeight = cssHeight;
+			drawWidth = cssHeight * imgRatio;
 		}
 
-		const dx = (w - drawWidth) / 2;
-		const dy = (h - drawHeight) / 2;
+		const dx = (cssWidth - drawWidth) / 2;
+		const dy = (cssHeight - drawHeight) / 2;
 
-		ctx.clearRect(0, 0, w, h);
 		ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+	};
+
+	useEffect(() => {
+		if (!frames || frames.length === 0) return;
+		drawCurrentFrame();
 	}, [frames, frameIndex]);
 
+	// Redraw khi resize window (đổi orientation / viewport)
+	useEffect(() => {
+		const handleResize = () => {
+			drawCurrentFrame();
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, [frames.length]);
+
+	// ==== Drag logic giữ nguyên như bản đã ổn ==== //
 	const startDrag = (x, y) => {
 		dragState.current.dragging = true;
 		dragState.current.lastX = x;
@@ -109,7 +133,7 @@ function Viewer360({ frames }) {
 
 		while (dragState.current.accumulated >= STEP_PX) {
 			setFrameIndex((prev) => {
-				if (!frames.length) return prev;
+				if (!frames || frames.length === 0) return prev;
 				let next = prev + direction;
 
 				if (next > FRAME_MAX) next = FRAME_MIN;
@@ -169,9 +193,9 @@ function Viewer360({ frames }) {
 			onTouchEnd={handleTouchEnd}
 		>
 			<canvas ref={canvasRef} className="viewer__canvas" />
-            {/* log frame */}
-			{/* <div className="viewer__hint">
-				Kéo trái/phải hoặc lên/xuống để xoay (frame {frameIndex + 1}/{frames.length || 0})
+			{/* log frame index
+			<div className="viewer__hint">
+				frame {frameIndex + 1}/{frames.length || 0}
 			</div> */}
 		</section>
 	);
