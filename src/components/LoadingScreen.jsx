@@ -1,4 +1,3 @@
-// components/LoadingScreen.jsx
 import { useEffect } from "react";
 
 function LoadingScreen({ onFinish, assetsReady }) {
