@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 const STEP_PX = 20;
 
 function Viewer360({ frames }) {
-	const FRAME_MIN = 0; // index 0..length-1
+	const FRAME_MIN = 0;
 	const FRAME_MAX = frames.length - 1;
 
 	const [frameIndex, setFrameIndex] = useState(0);
@@ -85,7 +85,6 @@ function Viewer360({ frames }) {
 		return () => window.removeEventListener("resize", handleResize);
 	}, [frames.length]);
 
-	// ==== Drag logic giữ nguyên như bản đã ổn ==== //
 	const startDrag = (x, y) => {
 		dragState.current.dragging = true;
 		dragState.current.lastX = x;
